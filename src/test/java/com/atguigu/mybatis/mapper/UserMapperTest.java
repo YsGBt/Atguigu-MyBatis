@@ -19,6 +19,7 @@ public class UserMapperTest {
     // 获取 SqlSessionFactory
     SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(inputStream);
 
+    // SqlSession默认不自动提交事务，若需要自动提交事务则使用sqlSessionFactory.openSession(true)
     // 创建SqlSession对象，此时通过SqlSession对象所操作的sql都必须手动提交或回滚事务
     // SqlSession sqlSession = sqlSessionFactory.openSession();
 
@@ -33,5 +34,37 @@ public class UserMapperTest {
 
     // 提交事务
     // sqlSession.commit();
+  }
+
+  @Test
+  public void testUpdate() throws IOException {
+    InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
+    SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
+    SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(inputStream);
+    SqlSession sqlSession = sqlSessionFactory.openSession(true);
+    UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+    userMapper.updateUser();
+  }
+
+  @Test
+  public void testDelete() throws IOException {
+    InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
+    SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
+    SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(inputStream);
+    SqlSession sqlSession = sqlSessionFactory.openSession(true);
+    UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+    userMapper.deleteUser();
+  }
+
+  @Test
+  public void testSelect() throws IOException {
+    InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");
+    SqlSessionFactoryBuilder sqlSessionFactoryBuilder = new SqlSessionFactoryBuilder();
+    SqlSessionFactory sqlSessionFactory = sqlSessionFactoryBuilder.build(inputStream);
+    SqlSession sqlSession = sqlSessionFactory.openSession(true);
+    UserMapper userMapper = sqlSession.getMapper(UserMapper.class);
+    System.out.println("userMapper.getUserById() = " + userMapper.getUserById());
+    System.out.println("------------------");
+    userMapper.getAllUser().forEach(System.out::println);
   }
 }

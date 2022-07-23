@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.mybatis.mapper.UserMapper">
+
+  <!-- int addUser(); -->
+  <insert id="addUser">
+    insert into t_user values (null, '张三', '123', 23, '女', '12345@qq.com')
+  </insert>
+
+  <!-- void updateUser(); -->
+  <update id="updateUser">
+    update t_user set username = '李四' where id = 1
+  </update>
+
+  <!-- void deleteUser(); -->
+  <delete id="deleteUser">
+    delete from t_user where id = 2
+  </delete>
+
+  <!-- User getUserById(); -->
+  <!--
+     查询功能的标签必须设置resultType或resultMap
+     resultType: 设置默认的映射关系 (需要保证类中的属性名和数据库表中的字段名保持一致)
+     resultMap: 设置自定义的映射关系 (如果属性名和字段名不一致，则需要使用resultMap)
+  -->
+  <select id="getUserById" resultType="com.atguigu.mybatis.pojo.User">
+    select * from t_user where id = 1
+  </select>
+
+  <!-- List<User> getAllUser(); 这里的resultType的值是通过typeAlies设置的类型别名 -->
+  <select id="getAllUser" resultType="User">
+    select * from t_user
+  </select>
+</mapper>

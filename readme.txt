@@ -79,3 +79,12 @@
      // sqlSession.commit();
     }
 
+5. 加入log4j日志功能
+   1) 加入依赖
+   2) 加入log4j的配置文件，存放的位置是src/main/resources目录下
+   3) 日志的级别:
+      - FATAL(致命)>ERROR(错误)>WARN(警告)>INFO(信息)>DEBUG(调试)
+      - 从左到右打印的内容越来越详细
+
+6. 核心配置文件详解 (在mybatis-config.xml)
+
