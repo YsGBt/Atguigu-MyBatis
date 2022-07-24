@@ -88,3 +88,85 @@
 
 6. 核心配置文件详解 (在mybatis-config.xml)
 
+7. MyBatis获取参数值的两种方式 (重点)
+   - MyBatis获取参数的两种方式:
+     a. ${} 本质是字符串拼接
+     b. #{} 本质是占位符赋值
+
+   1) mapper接口方法的参数为单个的字面量类型
+      - 此时可以使用${}和#{}以任意的名称获取参数的值，注意${}需要手动加单引号
+
+        <!-- User getUserByUsername(String username); -->
+        <select id="getUserByUsername" resultType="User">
+          select * from t_user where username = #{username}
+        </select>
+
+   2) mapper接口方法的参数为多个时
+      - 此时MyBatis会自动将这些参数放在一个map集合中，以arg0,arg1...为键，以参数为值;
+        或者以 param1,param2...为键，以参数为值;
+        因此只需要通过${}和#{}访问map集合的键就可以获取相对应的值，注意${}需要手动加单引号
+
+        <!-- User checkLogin(String username, String password); -->
+        <select id="checkLogin" resultType="User">
+          select * from t_user where username = #{arg0} and password = #{arg1}
+        </select>
+
+   3) 若mapper接口方法的参数有多个时，可以手动将这个参数放在一个map中存储
+      - 若mapper接口中的方法需要的参数为多个时，此时可以手动创建map集合，将这些数据放在map中
+        只需要通过${}和#{}访问map集合的键就可以获取相对应的值，注意${}需要手动加单引号
+
+        <!-- User checkLoginByMap(Map<String, Object> map); -->
+        <select id="checkLoginByMap" resultType="User">
+          select * from t_user where username = #{username} and password = #{password}
+        </select>
+
+   4) mapper接口方法的参数是实体类类型的参数
+      - 此时可以使用${}和#{}，通过访问实体类对象中的属性名获取属性值，注意${}需要手动加单引号
+
+        <!-- int createUser(User user); -->
+        <insert id="createUser">
+          insert into t_user values(null, #{username}, #{password}, #{age}, #{gender}, #{email})
+        </insert>
+
+   5) 使用 @Param 命名参数
+      - 可以通过@Param注解标识mapper接口中的方法参数
+        此时，会将这些参数放在map集合中，以@Param注解的value属性值为键，以参数为值;
+        或者以 param1,param2...为键，以参数为值;
+        只需要通过${}和#{}访问map集合的键就可以获取相对应的值， 注意${}需要手动加单引号
+
+        <!-- User checkLoginByParam(@Param("username") String username, @Param("password") String password); -->
+        <select id="checkLoginByParam" resultType="User">
+          select * from t_user where username = #{username} and password = #{password}
+        </select>
+
+8. MyBatis的各种查询功能
+   1) 查询一个实体类对象
+      - 若查询出的数据只有一条，可以通过实体类对象或者集合/实体类对象数组接收
+      - 若查询出的数据有多条，可以通过集合/实体类对象数组接收，但一定不能通过实体类对象接收，此时会抛出异常TooManyResultsException
+
+        <!-- User getUserById(@Param("id") Integer id); -->
+        <select id="getUserById" resultType="User">
+          select * from t_user where id = #{id}
+        </select>
+
+   2) 查询一个List集合/实体类对象数组
+
+        <!-- User[] getAllUser(); or List<User> getAllUser(); -->
+        <select id="getAllUser" resultType="User">
+          select * from t_user
+        </select>
+
+   3)
+
+
+
+
+
+
+
+
+
+
+
+
+
