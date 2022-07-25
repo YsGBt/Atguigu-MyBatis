@@ -14,4 +14,27 @@
   <select id="getAllUser" resultType="User">
     select * from t_user
   </select>
+
+  <!-- Integer getUserCount(); -->
+  <select id="getUserCount" resultType="Integer">
+    select count(*) from t_user
+  </select>
+
+  <!-- Map<String, Object> getMapById(@Param("id") Integer id); -->
+  <select id="getMapById" resultType="map">
+    select * from t_user where id = #{id}
+  </select>
+
+  <!-- List<Map<String, Object>> getUserMap(); -->
+  <select id="getUserMap" resultType="map">
+    select * from t_user;
+  </select>
+
+  <!--
+  @MapKey("id")
+  Map<String, Object> getUserIdMap();
+  -->
+  <select id="getUserIdMap" resultType="map">
+    select * from t_user;
+  </select>
 </mapper>

@@ -14,6 +14,12 @@
   <!-- 引入properties文件 -->
   <properties resource="jdbc.properties"></properties>
 
+  <!-- 设置MyBatis的全局配置 -->
+  <settings>
+    <!-- 将_自动映射为驼峰，employee_name:employeeName -->
+    <setting name="mapUnderscoreToCamelCase" value="true"/>
+  </settings>
+
   <!-- 设置类型别名，类型别名不区分大小写 -->
   <typeAliases>
     <!-- alias默认等于类名，即 alias="User" -->

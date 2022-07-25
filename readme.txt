@@ -140,7 +140,21 @@
         </select>
 
 8. MyBatis的各种查询功能
-   1) 查询一个实体类对象
+   查询单个数据:
+   1) 查询单个数据
+         - MyBatis中设置了默认的类型别名
+           Java.lang.Integer --> int, integer
+           int               --> _int, _integer
+           Map               --> map
+           String            --> string
+
+           <!-- Integer getUserCount(); -->
+           <select id="getUserCount" resultType="Integer">
+             select count(*) from t_user
+           </select>
+
+   查询单个实体类对象数据:
+   2) 查询一个实体类对象
       - 若查询出的数据只有一条，可以通过实体类对象或者集合/实体类对象数组接收
       - 若查询出的数据有多条，可以通过集合/实体类对象数组接收，但一定不能通过实体类对象接收，此时会抛出异常TooManyResultsException
 
@@ -149,18 +163,172 @@
           select * from t_user where id = #{id}
         </select>
 
-   2) 查询一个List集合/实体类对象数组
+   3) 查询一条数据为map集合
+
+           <!-- Map<String, Object> getMapById(@Param("id") Integer id); -->
+           <select id="getMapById" resultType="map">
+             select * from t_user where id = #{id}
+           </select>
+           结果: {password=123, gender=女, id=1, age=23, email=12345@qq.com, username=李四}
+
+
+   查询多条数据:
+   4) 查询一个List集合/实体类对象数组
 
         <!-- User[] getAllUser(); or List<User> getAllUser(); -->
         <select id="getAllUser" resultType="User">
           select * from t_user
         </select>
 
-   3)
+   5) 查询多条数据并用map集合的list接收
 
+        <!-- List<Map<String, Object>> getUserMap(); -->
+        <select id="getUserMap" resultType="map">
+          select * from t_user;
+        </select>
 
+        或者使用 @MapKey 注解:
+        - @MapKey注解设置map集合的键，值是每条数据所对应的map集合
 
+        <!--
+        @MapKey("id")
+        Map<String, Object> getUserIdMap();
+        -->
+        <select id="getUserIdMap" resultType="map">
+          select * from t_user;
+        </select>
 
+        结果: {1={password=123, gender=女, id=1, age=23, email=12345@qq.com, username=李四},
+              2={password=123, gender=女, id=2, age=23, email=12345@qq.com, username=张三}}
+
+        当然，
+        @MapKey("id")
+        Map<String, User> getUserIdMap();
+        也是没有问题的
+
+9. 特殊SQL的执行
+   1) 模糊查询
+
+      <!-- List<User> getUserByFuzzyName(@Param("username") String username); -->
+      <select id="getUserByFuzzyName" resultType="User">
+        <!-- select * from t_user where username like "%"#{username}"%" 或者: -->
+        select * from t_user where username like concat('%', #{username}, '%')
+      </select>
+
+   2) 批量删除 (注意这里只能用${}，因为#{}会自动给参数两边添加''。而使用${}会带来SQL注入问题所以需要手动检测输入参数是否合法)
+
+      <!-- int deleteBatchUser(@Param("ids") String ids); -->
+      <delete id="deleteBatchUser">
+        delete from t_user where id in (${ids})
+      </delete>
+
+   3) 动态设置表名 (这里也需要手动处理SQL注入问题)
+
+      <!-- List<User> getUserByTableName(@Param("tableName") String tableName); -->
+      <select id="getUserByTableName" resultType="User">
+        select * from ${tableName}
+      </select>
+
+   4) 添加功能获取自增的主键
+      - useGeneratedKeys: 设置使用自增的主键
+      - keyProperty: 因为增删改有统一的返回值是受影响的行数，因此只能将获取的自增的主键放在传入的参
+                     数user对象的某个属性中
+
+      <!-- void createUser(@Param("user") User user); -->
+      <insert id="createUser" useGeneratedKeys="true" keyProperty="id">
+        insert into t_user values(null, #{user.username}, #{user.password}, #{user.age}, #{user.gender}, #{user.email})
+      </insert>
+
+10. 自定义映射resultMap
+    1) 解决字段名和属性名不一致的情况
+       a) 为字段起别名，保持和属性名一致
+          <!-- List<Employee> getAllEmployee(); -->
+          <select id="getAllEmployee" resultType="Employee">
+            select eid, employee_name employeeName, age, gender, email from t_employee
+          </select>
+
+       b) 在 mybatis-config.xml 设置全局配置，将下划线自动映射为驼峰
+          <!-- 设置MyBatis的全局配置 -->
+          <settings>
+            <!-- 将_自动映射为驼峰，employee_name:employeeName -->
+            <setting name="mapUnderscoreToCamelCase" value="true"/>
+          </settings>
+
+       c) 通过 resultMap 设置自定义的映射关系
+          <resultMap id="employeeMap" type="com.atguigu.mybatis.pojo.Employee">
+            <id property="eid" column="eid"></id>
+            <result property="employeeName" column="employee_name"></result>
+            <result property="age" column="age"></result>
+            <result property="gender" column="gender"></result>
+            <result property="email" column="email"></result>
+          </resultMap>
+
+          <!-- List<Employee> getAllEmployee(); -->
+          <select id="getAllEmployee" resultMap="employeeMap">
+            select * from t_employee
+          </select>
+
+    2) 处理多对一映射关系
+       a) 级联属性赋值 （使用较少)
+          <resultMap id="empAndDeptResultMapOne" type="Employee">
+            <id property="eid" column="eid"></id>
+            <result property="employeeName" column="employee_name"></result>
+            <result property="age" column="age"></result>
+            <result property="gender" column="gender"></result>
+            <result property="email" column="email"></result>
+            <result property="department.did" column="did"></result>
+            <result property="department.departmentName" column="department_name"></result>
+          </resultMap>
+
+          <!-- Employee getEmployeeWithDepartmentById(@Param("eid") Integer eid); -->
+          <select id="getEmployeeWithDepartmentById" resultMap="empAndDeptResultMapOne">
+            select * from t_employee left join t_department on t_employee.did = t_department.did where t_employee.eid = #{eid}
+          </select>
+
+       b) 通过使用 association 标签处理多对一映射关系
+          - association: 处理多对一的映射关系
+            - property: 需要处理多对一的映射关系的属性名
+            - javaType: 该属性的类型
+
+          <resultMap id="empAndDeptResultMapTwo" type="Employee">
+            <id property="eid" column="eid"></id>
+            <result property="employeeName" column="employee_name"></result>
+            <result property="age" column="age"></result>
+            <result property="gender" column="gender"></result>
+            <result property="email" column="email"></result>
+            <association property="department" javaType="com.atguigu.mybatis.pojo.Department">
+              <id property="did" column="did"></id>
+              <result property="departmentName" column="department_name"></result>
+            </association>
+          </resultMap>
+
+       c) 分步查询 (效率高，查询表数量少但查询数据量大的情况下推荐使用)
+          - select: 设置分步查询的sql的唯一表示 (namespace.SQLID 或 mapper接口的全类名.方法名)
+          - column: 设置分步查询的条件
+
+          <resultMap id="empAndDeptByStepResultMap" type="Employee">
+            <id property="eid" column="eid"></id>
+            <result property="employeeName" column="employee_name"></result>
+            <result property="age" column="age"></result>
+            <result property="gender" column="gender"></result>
+            <result property="email" column="email"></result>
+            <association property="department"
+              select="com.atguigu.mybatis.mapper.DepartmentMapper.getEmployeeWithDepartmentByStepTwo"
+              column="did"></association>
+          </resultMap>
+
+          <!-- Employee getEmployeeWithDepartmentByStepOne(@Param("eid") Integer eid); -->
+          <select id="getEmployeeWithDepartmentByStepOne" resultMap="empAndDeptByStepResultMap">
+            select * from t_employee where eid = #{eid}
+          </select>
+
+          然后在DepartmentMapper里:
+          <!-- Department getEmployeeWithDepartmentByStepTwo(@Param("did") Integer did); -->
+          <select id="getEmployeeWithDepartmentByStepTwo" resultType="Department">
+            select * from t_department where did = #{did}
+          </select>
+
+    3)
 
 
 
