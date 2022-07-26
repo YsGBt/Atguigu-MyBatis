@@ -27,6 +27,7 @@ public class EmployeeMapperTest {
   public void testGetEmployeeWithDepartmentByStep() {
     SqlSession sqlSession = SqlSessionUtil.getSqlSession();
     EmployeeMapper mapper = sqlSession.getMapper(EmployeeMapper.class);
-    System.out.println(mapper.getEmployeeWithDepartmentByStepOne(2));
+    // 这里设置了分步查询和延迟加载，所以在没有调用department参数时不会加载department
+    System.out.println(mapper.getEmployeeWithDepartmentByStepOne(2).getEmployeeName());
   }
 }

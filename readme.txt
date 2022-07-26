@@ -165,11 +165,11 @@
 
    3) 查询一条数据为map集合
 
-           <!-- Map<String, Object> getMapById(@Param("id") Integer id); -->
-           <select id="getMapById" resultType="map">
-             select * from t_user where id = #{id}
-           </select>
-           结果: {password=123, gender=女, id=1, age=23, email=12345@qq.com, username=李四}
+       <!-- Map<String, Object> getMapById(@Param("id") Integer id); -->
+       <select id="getMapById" resultType="map">
+         select * from t_user where id = #{id}
+       </select>
+       结果: {password=123, gender=女, id=1, age=23, email=12345@qq.com, username=李四}
 
 
    查询多条数据:
@@ -305,6 +305,7 @@
        c) 分步查询 (效率高，查询表数量少但查询数据量大的情况下推荐使用)
           - select: 设置分步查询的sql的唯一表示 (namespace.SQLID 或 mapper接口的全类名.方法名)
           - column: 设置分步查询的条件
+          - fetchType: 当开启了全局的延迟加载之后，可通过此属性手动控制延迟加载的效果 fetchType="eager"
 
           <resultMap id="empAndDeptByStepResultMap" type="Employee">
             <id property="eid" column="eid"></id>
@@ -314,7 +315,8 @@
             <result property="email" column="email"></result>
             <association property="department"
               select="com.atguigu.mybatis.mapper.DepartmentMapper.getEmployeeWithDepartmentByStepTwo"
-              column="did"></association>
+              column="did"
+              fetchType="lazy"></association>
           </resultMap>
 
           <!-- Employee getEmployeeWithDepartmentByStepOne(@Param("eid") Integer eid); -->
@@ -328,13 +330,175 @@
             select * from t_department where did = #{did}
           </select>
 
-    3)
+    3) 延迟加载
+       - 开启延迟加载, 在mybatis-config中添加配置:
+         <!-- 开启延迟加载 -->
+         <setting name="lazyLoadingEnabled" value="true"/>
+       - 此时如果Employee中的Department属性未被调用，则不会执行分步查询中查询Department的语句。只有在调用
+         Department属性时才会执行。
 
+    4) 处理一对多的映射关系
+       a) 使用 collection 标签处理一对多映射关系
+          - property: 处理一对多的映射关系的属性
+          - ofType: 表示该属性所对应的集合中存储数据的类型
 
+          <resultMap id="deptAndEmpResultMap" type="Department">
+            <id property="did" column="did"></id>
+            <result property="departmentName" column="department_name"></result>
+            <collection property="employeeList" ofType="Employee">
+              <id property="eid" column="eid"></id>
+              <result property="employeeName" column="employee_name"></result>
+              <result property="age" column="age"></result>
+              <result property="gender" column="gender"></result>
+              <result property="email" column="email"></result>
+            </collection>
+          </resultMap>
 
+          <!-- Department getDepartmentAndEmployee(@Param("did") Integer did); -->
+          <select id="getDepartmentAndEmployee" resultMap="deptAndEmpResultMap">
+            select * from t_department left join t_employee on t_department.did = t_employee.did where t_department.did = #{did}
+          </select>
 
+       b) 分步查询
 
+          <resultMap id="deptAndEmpByStepResultMap" type="Department">
+            <id property="did" column="did"></id>
+            <result property="departmentName" column="department_name"></result>
+            <collection property="employeeList"
+                        select="com.atguigu.mybatis.mapper.EmployeeMapper.getDepartmentAndEmployeeByStepTwo"
+                        column="did">
+            </collection>
+          </resultMap>
 
+          <!-- Department getDepartmentAndEmployeeByStepOne(@Param("did") Integer did); -->
+          <select id="getDepartmentAndEmployeeByStepOne" resultMap="deptAndEmpByStepResultMap">
+            select * from t_department where did = #{did}
+          </select>
+
+11. 动态SQL
+    - Mybatis框架的动态SQL技术是一种根据特定条件动态拼装SQL语句的功能，它存在的意义是为了解决
+      拼接SQL语句字符串时的痛点问题。
+
+    1) if 标签(常用): 根据标签中test属性所对应的表达式决定标签中的内容是否需要拼接到SQL中
+       <!-- List<Employee> getEmployeeByCondition(@Param("employee") Employee employee); -->
+       <select id="getEmployeeByCondition" resultType="Employee">
+         select * from t_employee where 1=1
+         <if test="employee.employeeName != null and employee.employeeName != ''">
+           and employee_name = #{employee.employeeName}
+         </if>
+         <if test="employee.age != null and employee.age != ''">
+           and age = #{employee.age}
+         </if>
+         <if test="employee.gender != null and employee.gender != ''">
+           and gender = #{employee.gender}
+         </if>
+         <if test="employee.email != null and employee.email != ''">
+           and email = #{employee.email}
+         </if>
+       </select>
+
+    2) where 标签(常用):
+       - 当where标签中有内容时，会自动生成where关键字，并且将内容前多余的and或or去掉 (不能去掉内容后多余的and和or)
+       - 当where标签中没有内容时，不会生成where关键字
+       <!-- List<Employee> getEmployeeByCondition(@Param("employee") Employee employee); -->
+       <select id="getEmployeeByCondition" resultType="Employee">
+         select * from t_employee
+         <where>
+           <if test="employee.employeeName != null and employee.employeeName != ''">
+             employee_name = #{employee.employeeName}
+           </if>
+           <if test="employee.age != null and employee.age != ''">
+             and age = #{employee.age}
+           </if>
+           <if test="employee.gender != null and employee.gender != ''">
+             and gender = #{employee.gender}
+           </if>
+           <if test="employee.email != null and employee.email != ''">
+             and email = #{employee.email}
+           </if>
+         </where>
+       </select>
+
+    3) trim 标签:
+       - 若标签中有内容时:
+         - prefix|suffix: 将trim标签内容前面或后面添加指定内容
+         - suffixOverrides|prefixOverrides: 将trim标签内容前面或后面去掉指定内容
+       - 若标签中没有内容时，trim标签没有任何效果
+       <!-- List<Employee> getEmployeeByCondition(@Param("employee") Employee employee); -->
+       <select id="getEmployeeByCondition" resultType="Employee">
+         select * from t_employee
+         <trim prefix="where" suffixOverrides="and|or">
+           <if test="employee.employeeName != null and employee.employeeName != ''">
+             employee_name = #{employee.employeeName} and
+           </if>
+           <if test="employee.age != null and employee.age != ''">
+             age = #{employee.age} and
+           </if>
+           <if test="employee.gender != null and employee.gender != ''">
+             gender = #{employee.gender} or
+           </if>
+           <if test="employee.email != null and employee.email != ''">
+             email = #{employee.email}
+           </if>
+         </trim>
+       </select>
+
+    4) choose, when, otherwise 标签: 相当于 if, else if, else
+       - when至少有一个，otherwise最多一个
+       <!-- List<Employee> getEmployeeByChoose(@Param("employee") Employee employee); -->
+       <select id="getEmployeeByChoose" resultType="Employee">
+         select * from t_employee
+         <where>
+           <choose>
+             <when test="employee.employeeName != null and employee.employeeName != ''">
+               employee_name = #{employee.employeeName}
+             </when>
+             <when test="employee.age != null and employee.age != ''">
+               age = #{employee.age}
+             </when>
+             <when test="employee.gender != null and employee.gender != ''">
+               gender = #{employee.gender}
+             </when>
+             <when test="employee.email != null and employee.email != ''">
+               email = #{employee.email}
+             </when>
+             <otherwise>
+               did = 1
+             </otherwise>
+           </choose>
+         </where>
+       </select>
+
+    5) foreach 标签(常用):
+       - collection: 设置需要循环的数组或集合
+       - item: 表示数组或集合中的每一个数据
+       - separator: 循环体之间的分隔符，会自动在分隔符左右添加空格
+       - open|close: 和trim中的prefix|suffix一样，但是在foreach没有内容的情况下依旧会生效
+
+       a) 批量删除的两种方式:
+          <!-- int deleteEmployeeBatchByArray(@Param("eids") Integer[] eids); -->
+          <delete id="deleteEmployeeBatchByArray">
+            delete from t_employee where
+            <foreach collection="eids" item="eid" separator="or">
+              eid = #{eid}
+            </foreach>
+          </delete>
+
+          <delete id="deleteEmployeeBatchByArrayUsingIn">
+            delete from t_employee where eid in
+            <foreach collection="eids" item="eid" separator="," open="(" close=")">
+              #{eid}
+            </foreach>
+          </delete>
+
+       b) 批量添加:
+          <!-- int insertEmployeeBatchByList(@Param("emps") List<Employee> employeeList); -->
+          <insert id="insertEmployeeBatchByList">
+            insert into t_employee values
+            <foreach collection="emps" item="emp" separator=",">
+              (null, #{emp.employeeName}, #{emp.age}, #{emp.gender}, #{emp.email}, null)
+            </foreach>
+          </insert>
 
 
 

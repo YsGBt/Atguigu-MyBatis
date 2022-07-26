@@ -73,11 +73,17 @@
     <result property="email" column="email"></result>
     <association property="department"
       select="com.atguigu.mybatis.mapper.DepartmentMapper.getEmployeeWithDepartmentByStepTwo"
-      column="did"></association>
+      column="did"
+      fetchType="lazy"></association>
   </resultMap>
 
   <!-- Employee getEmployeeWithDepartmentByStepOne(@Param("eid") Integer eid); -->
   <select id="getEmployeeWithDepartmentByStepOne" resultMap="empAndDeptByStepResultMap">
     select * from t_employee where eid = #{eid}
+  </select>
+
+  <!-- List<Employee> getDepartmentAndEmployeeByStepTwo(@Param("did") Integer did); -->
+  <select id="getDepartmentAndEmployeeByStepTwo" resultType="Employee">
+    select * from t_employee where did = #{did}
   </select>
 </mapper>

@@ -8,4 +8,35 @@
   <select id="getEmployeeWithDepartmentByStepTwo" resultType="Department">
     select * from t_department where did = #{did}
   </select>
+
+  <resultMap id="deptAndEmpResultMap" type="Department">
+    <id property="did" column="did"></id>
+    <result property="departmentName" column="department_name"></result>
+    <collection property="employeeList" ofType="Employee">
+      <id property="eid" column="eid"></id>
+      <result property="employeeName" column="employee_name"></result>
+      <result property="age" column="age"></result>
+      <result property="gender" column="gender"></result>
+      <result property="email" column="email"></result>
+    </collection>
+  </resultMap>
+  <!-- Department getDepartmentAndEmployee(@Param("did") Integer did); -->
+  <select id="getDepartmentAndEmployee" resultMap="deptAndEmpResultMap">
+    select * from t_department left join t_employee on t_department.did = t_employee.did where t_department.did = #{did}
+  </select>
+
+
+  <resultMap id="deptAndEmpByStepResultMap" type="Department">
+    <id property="did" column="did"></id>
+    <result property="departmentName" column="department_name"></result>
+    <collection property="employeeList"
+                select="com.atguigu.mybatis.mapper.EmployeeMapper.getDepartmentAndEmployeeByStepTwo"
+                column="did">
+    </collection>
+  </resultMap>
+
+  <!-- Department getDepartmentAndEmployeeByStepOne(@Param("did") Integer did); -->
+  <select id="getDepartmentAndEmployeeByStepOne" resultMap="deptAndEmpByStepResultMap">
+    select * from t_department where did = #{did}
+  </select>
 </mapper>
