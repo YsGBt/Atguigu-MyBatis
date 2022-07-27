@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.mybatis.mapper.CacheMapper">
+
+  <!-- 开启二级缓存 -->
+  <cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+
+  <!-- Employee getEmployeeByEid(@Param("eid") Integer eid); -->
+  <select id="getEmployeeByEid" resultType="Employee">
+    select * from t_employee where eid = #{eid}
+  </select>
+
+  <!-- void insertEmployee(@Param("employee") Employee employee); -->
+  <insert id="insertEmployee">
+    insert into t_employee
+    values (null, #{employee.employeeName}, #{employee.age}, #{employee.gender}, #{employee.email}, null);
+  </insert>
+</mapper>

@@ -28,9 +28,11 @@
     </foreach>
   </delete>
 
+  
+  <sql id="employeeColumns">eid,employee_name,age,sex,email</sql>
   <!-- List<Employee> getEmployeeByChoose(@Param("employee") Employee employee); -->
   <select id="getEmployeeByChoose" resultType="Employee">
-    select * from t_employee
+    select <include refid="employeeColumns"></include> from t_employee
     <where>
       <choose>
         <when test="employee.employeeName != null and employee.employeeName != ''">

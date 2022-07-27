@@ -500,5 +500,76 @@
             </foreach>
           </insert>
 
+    6) sql 标签:
+       - 设置sql片段:
+       <sql id="employeeColumns">eid,employee_name,age,sex,email</sql>
 
+       - 引用sql片段 (使用 include 标签):
+       <select id="getEmployeeByChoose" resultType="Employee">
+          select <include refid="employeeColumns"></include> from t_employee
+       </select>
 
+12. MyBatis的缓存
+    1) MyBatis的一级缓存 (默认开启)
+       - 一级缓存是SqlSession级别的，通过同一个SqlSession查询的数据会被缓存，下次查询相同的数据，就会从缓存中直接获取，
+         不会从数据库重写访问
+
+       - 使一级缓存失效的四种情况:
+         a) 不同的SqlSession对应不同的一级缓存
+         b) 同一个SqlSession但是查询条件不同
+         c) 同一个SqlSession两次查询期间执行了任何一次增删改操作
+         d) 同一个SqlSession两次查询期间手动清空了缓存
+
+    2) MyBatis的二级缓存 (需要手动开启)
+       - 二级缓存是SqlSessionFactory级别的，通过同一个SqlSessionFactory创建的SqlSession查询的结果都会被缓存
+
+       - 二级缓存开启的步骤:
+         a) 在核心配置文件mybatis-config.xml中设置全局配置属性cacheEnabled="true"，默认属性为true所以不需要手动开启
+         b) 在映射文件中设置标签 <cache />
+         c) 二级缓存必须在SqlSession关闭或提交之后有效 (没有关闭或提交时会被保存在一级缓存中)
+         d) 查询的数据所转换的实体类型必须实现序列化接口 Serializable
+
+       - 使二级缓存失效的清空:
+         a) 两次查询之间执行了任意的增删改，会使一级和二级缓存同时失效
+
+       - 二级缓存的相关配置 <cache />
+         a) eviction属性: 缓存回收策略
+            LRU(Least Recently Used) – 最近最少使用的:移除最长时间不被使用的对象。
+            FIFO(First in First out) – 先进先出:按对象进入缓存的顺序来移除它们。
+            SOFT – 软引用:移除基于垃圾回收器状态和软引用规则的对象。
+            WEAK – 弱引用:更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+            默认的是 LRU。
+         b) flushInterval属性: 刷新间隔，单位毫秒
+            默认情况是不设置，也就是没有刷新间隔，缓存仅仅调用语句时刷新
+         c) size属性: 引用数目，正整数
+            代表缓存最多可以存储多少个对象，太大容易导致内存溢出
+         d) readOnly属性: 只读，true/false
+            true:只读缓存;会给所有调用者返回缓存对象的相同实例。因此这些对象不应该被修改。这提供了很重要的性能优势。
+            false:读写缓存;会返回缓存对象的拷贝(通过序列化)。这会慢一些，但是安全，因此默认是 false。
+
+    3) MyBatis缓存的查询顺序
+       a) 先查询二级缓存，因为二级缓存中可能会有其他程序已经查出来的数据，可以拿来直接使用。
+       b) 如果二级缓存没有命中，再查询一级缓存
+       c) 如果一级缓存也没有命中，则查询数据库
+       d) SqlSession关闭之后，一级缓存中的数据会写入二级缓存
+
+    4) 整合第三方缓存 EHCache
+       a) 添加依赖
+       b) 创建EHCache的配置文件 ehcache.xml (配置文件名不能更改)
+       c) 设置二级缓存的类型
+          <cache type="org.mybatis.caches.ehcache.EhcacheCache"/>
+       d) 加入logback日志
+          存在SLF4J时，作为简易日志的log4j将失效，此时我们需要借助SLF4J的具体实现logback来打印日志。
+          创建logback的配置文件logback.xml (配置文件名不能更改)
+
+13. MyBatis的逆向工程
+    - 正向工程:先创建Java实体类，由框架负责根据实体类生成数据库表。Hibernate是支持正向工程的。
+    - 逆向工程:先创建数据库表，由框架负责根据数据库表，反向生成如下资源:
+      - Java实体类
+      - Mapper接口
+      - Mapper映射文件
+
+    1) 添加依赖和插件
+    2) 创建MyBatis的核心配置文件
+    3) 创建逆向工程的配置文件 文件名必须是 generatorConfig.xml
+    4) 执行MBG插件的generate目标
