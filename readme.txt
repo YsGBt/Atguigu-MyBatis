@@ -573,3 +573,64 @@
     2) 创建MyBatis的核心配置文件
     3) 创建逆向工程的配置文件 文件名必须是 generatorConfig.xml
     4) 执行MBG插件的generate目标
+
+14. 分页插件
+    1) 分页插件配置
+       a) 添加依赖
+          <!-- https://mvnrepository.com/artifact/com.github.pagehelper/pagehelper -->
+          <dependency>
+              <groupId>com.github.pagehelper</groupId>
+              <artifactId>pagehelper</artifactId>
+              <version>5.2.0</version>
+          </dependency>
+
+       b) 配置分页插件 (在MyBatis的核心配置文件中配置插件)
+          <plugins>
+              <!--设置分页插件-->
+              <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>
+          </plugins>
+
+    2) 分页插件使用
+       a) 在查询功能之前使用PageHelper.startPage(int pageNum, int pageSize)开启分页功能
+          - limit index, pageSize
+          - index: 当前页的开始索引
+          - pageSize: 每页显示的条数
+          - pageNum: 当前页的页码
+          - index = (pageNum - 1) *pageSize
+
+       b) 在查询获取list集合之后，使用PageInfo<T> pageInfo = new PageInfo<>(List<T> list, int navigatePages)获取分页相关数据
+          - list:分页之后的数据
+          - navigatePages:导航分页的页码数
+
+          @Test
+          public void testPageHelper() {
+            SqlSession sqlSession = SqlSessionUtil.getSqlSession();
+            EmployeeMapper mapper = sqlSession.getMapper(EmployeeMapper.class);
+
+            int pageNum = 2;
+            int pageSize = 3;
+            // Page<Object> objects = PageHelper.startPage(pageNum, pageSize);
+            PageHelper.startPage(pageNum, pageSize);
+            List<Employee> employeeList = mapper.getAllEmployee();
+            // navigatePages: 导航页码数 例如如果导航页码数为5在显示第四页时导航应该显示 2 3 4 5 6 供用户选择
+            PageInfo<Employee> page = new PageInfo<>(employeeList, 5);
+
+            employeeList.forEach(System.out::println);
+            System.out.println("page = " + page);
+          }
+
+       c) 分页相关数据
+          PageInfo{
+          pageNum=8, pageSize=4, size=2, startRow=29, endRow=30, total=30, pages=8,
+          list=Page{count=true, pageNum=8, pageSize=4, startRow=28, endRow=32, total=30, pages=8, reasonable=false, pageSizeZero=false},
+          prePage=7, nextPage=0, isFirstPage=false, isLastPage=true, hasPreviousPage=true,
+          hasNextPage=false, navigatePages=5, navigateFirstPage=4, navigateLastPage=8, navigatePageNums=[4, 5, 6, 7, 8]
+          }
+          常用数据:
+          - pageNum:当前页的页码
+          - pageSize:每页显示的条数
+          - size:当前页显示的真实条数
+          - total:总记录数
+          - pages:总页数
+          - prePage:上一页的页码
+          - nextPage:下一页的页码
